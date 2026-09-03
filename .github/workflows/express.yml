@@ -38,12 +38,15 @@ jobs:
           API_BASE_URL: http://localhost:4599
         run: |
           mkdir -p test-results
+          # Mount the whole examples/ dir, not just cases-express/ — fixtures
+          # resolve from a sibling `fixtures/` directory next to the cases
+          # root, so cases-express alone would leave that unresolvable.
           docker run --rm --network host \
-            -v "${{ github.workspace }}/releasetwin-engine/examples/cases-express:/cases:ro" \
+            -v "${{ github.workspace }}/releasetwin-engine/examples:/examples:ro" \
             -v "${{ github.workspace }}/test-results:/test-results" \
             -e API_BASE_URL \
             ghcr.io/ernestoalejowitt22/releasetwin/cli:0.2.0 \
-            run /cases --junit-xml /test-results/junit.xml
+            run /examples/cases-express --junit-xml /test-results/junit.xml
 
       - name: Publish test results
         if: always()
