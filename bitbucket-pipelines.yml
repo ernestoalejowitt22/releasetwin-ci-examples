@@ -1,0 +1,62 @@
+# Mirrored from https://github.com/ernestoalejowitt22/releasetwin-ci-examples
+# by a GitHub Actions job on every push to main (see that repo's
+# .github/workflows/mirror-to-bitbucket.yml) — this file is not edited here.
+#
+# Builds the ReleaseTwin CLI from source rather than using the published
+# Docker image: the SPA demos need a real Chromium the published image
+# doesn't bundle (see ReleaseTwin's Dockerfile), and Bitbucket's
+# Docker-in-Docker `services: - docker` doesn't cleanly reach a service the
+# step itself just booted on localhost — building from source and running
+# everything in one step sidesteps both problems. Same approach GitHub
+# Actions' react.yml / angular.yml use.
+image: mcr.microsoft.com/dotnet/sdk:8.0
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Express demo
+            script:
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
+              - cd apps/express-demo && npm ci && npm start & disown
+              - npx --yes wait-on http://localhost:4599/orders/42
+              - cd /tmp/releasetwin-engine
+              - export API_BASE_URL=http://localhost:4599
+              - dotnet run --project src/ReleaseTwin.Cli -- run examples/cases-express
+
+        - step:
+            name: React demo
+            script:
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
+              - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
+              - export PATH="$PATH:$HOME/.dotnet/tools"
+              - (cd /tmp/releasetwin-engine && dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release)
+              - playwright install --with-deps chromium
+              - cd apps/react-demo && npm ci && npm run build && npm run preview & disown
+              - npx --yes wait-on http://localhost:4173
+              - cd /tmp/releasetwin-engine
+              - export RELEASETWIN_UI_ENABLED=1 SPA_BASE_URL=http://localhost:4173 API_BASE_URL=https://postman-echo.com
+              - mkdir /tmp/cases-react /tmp/fixtures
+              - cp examples/cases-spa/react-journey.yaml examples/cases-spa/admin-cookie.yaml /tmp/cases-react/
+              - cp examples/fixtures/spa-journey.json /tmp/fixtures/
+              - dotnet run --no-build -c Release --project src/ReleaseTwin.Cli -- run /tmp/cases-react
+
+        - step:
+            name: Angular demo
+            script:
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
+              - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
+              - export PATH="$PATH:$HOME/.dotnet/tools"
+              - (cd /tmp/releasetwin-engine && dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release)
+              - playwright install --with-deps chromium
+              - cd apps/angular-demo && npm ci && npm run build && npm run preview & disown
+              - npx --yes wait-on http://localhost:4174
+              - cd /tmp/releasetwin-engine
+              - export RELEASETWIN_UI_ENABLED=1 SPA_BASE_URL=http://localhost:4174 API_BASE_URL=https://postman-echo.com
+              - mkdir /tmp/cases-angular /tmp/fixtures
+              - cp examples/cases-spa/angular-journey.yaml examples/cases-spa/admin-cookie.yaml /tmp/cases-angular/
+              - cp examples/fixtures/spa-journey.json /tmp/fixtures/
+              - dotnet run --no-build -c Release --project src/ReleaseTwin.Cli -- run /tmp/cases-angular

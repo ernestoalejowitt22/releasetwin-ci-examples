@@ -1,0 +1,110 @@
+# Platform-agnostic — no hardcoded org/project name. Point an Azure Pipeline
+# at this repo as an external GitHub source (no mirror needed, unlike
+# Bitbucket) and it picks this file up.
+#
+# Builds the ReleaseTwin CLI from source rather than using the published
+# Docker image: the SPA demos need a real Chromium the published image
+# doesn't bundle (see ReleaseTwin's Dockerfile). Same approach as GitHub
+# Actions' react.yml / angular.yml and bitbucket-pipelines.yml.
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: express_demo
+    displayName: Express demo
+    steps:
+      - task: UseDotNet@2
+        inputs:
+          version: "8.0.x"
+      - task: NodeTool@0
+        inputs:
+          versionSpec: "20.x"
+      - checkout: self
+        path: releasetwin-ci-examples
+      - script: git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Checkout ReleaseTwin
+      - script: npm ci && (npm start &)
+        workingDirectory: apps/express-demo
+        displayName: Install + boot express-demo
+      - script: npx --yes wait-on http://localhost:4599/orders/42
+        displayName: Wait for express-demo
+      - script: dotnet run --project src/ReleaseTwin.Cli -- run examples/cases-express
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        env:
+          API_BASE_URL: http://localhost:4599
+        displayName: Run release-proof cases
+
+  - job: react_demo
+    displayName: React demo
+    steps:
+      - task: UseDotNet@2
+        inputs:
+          version: "8.0.x"
+      - task: NodeTool@0
+        inputs:
+          versionSpec: "20.x"
+      - checkout: self
+        path: releasetwin-ci-examples
+      - script: git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Checkout ReleaseTwin
+      - script: dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Build the CLI
+      - script: pwsh src/ReleaseTwin.Cli/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Install Playwright browsers
+      - script: npm ci && npm run build && (npm run preview &)
+        workingDirectory: apps/react-demo
+        displayName: Build + serve react-demo
+      - script: npx --yes wait-on http://localhost:4173
+        displayName: Wait for react-demo
+      - script: |
+          mkdir -p /tmp/cases-react /tmp/fixtures
+          cp examples/cases-spa/react-journey.yaml examples/cases-spa/admin-cookie.yaml /tmp/cases-react/
+          cp examples/fixtures/spa-journey.json /tmp/fixtures/
+          dotnet run --no-build -c Release --project src/ReleaseTwin.Cli -- run /tmp/cases-react
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        env:
+          RELEASETWIN_UI_ENABLED: "1"
+          SPA_BASE_URL: http://localhost:4173
+          API_BASE_URL: https://postman-echo.com
+        displayName: Run release-proof cases
+
+  - job: angular_demo
+    displayName: Angular demo
+    steps:
+      - task: UseDotNet@2
+        inputs:
+          version: "8.0.x"
+      - task: NodeTool@0
+        inputs:
+          versionSpec: "20.x"
+      - checkout: self
+        path: releasetwin-ci-examples
+      - script: git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Checkout ReleaseTwin
+      - script: dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Build the CLI
+      - script: pwsh src/ReleaseTwin.Cli/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        displayName: Install Playwright browsers
+      - script: npm ci && npm run build && (npm run preview &)
+        workingDirectory: apps/angular-demo
+        displayName: Build + serve angular-demo
+      - script: npx --yes wait-on http://localhost:4174
+        displayName: Wait for angular-demo
+      - script: |
+          mkdir -p /tmp/cases-angular /tmp/fixtures
+          cp examples/cases-spa/angular-journey.yaml examples/cases-spa/admin-cookie.yaml /tmp/cases-angular/
+          cp examples/fixtures/spa-journey.json /tmp/fixtures/
+          dotnet run --no-build -c Release --project src/ReleaseTwin.Cli -- run /tmp/cases-angular
+        workingDirectory: $(Agent.TempDirectory)/releasetwin-engine
+        env:
+          RELEASETWIN_UI_ENABLED: "1"
+          SPA_BASE_URL: http://localhost:4174
+          API_BASE_URL: https://postman-echo.com
+        displayName: Run release-proof cases
