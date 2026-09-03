@@ -1,0 +1,13 @@
+{
+  "name": "express-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Express app with one flag-gated behaviour bug, for ReleaseTwin's flag-proof example.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,63 @@
+name: React demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  release-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout releasetwin-ci-examples
+        uses: actions/checkout@v7
+
+      # The published CLI image (ghcr.io/…/releasetwin/cli) has the UI adapter
+      # compiled in but no Chromium — it degrades gracefully rather than run
+      # ui.* steps. UI-journey cases need a real browser, so this workflow
+      # builds the engine from source and installs Playwright's Chromium,
+      # same as ReleaseTwin's own ci.yml does for ReleaseTwin.Adapters.Ui.Tests.
+      - name: Checkout ReleaseTwin
+        uses: actions/checkout@v7
+        with:
+          repository: ernestoalejowitt22/ReleaseTwin
+          path: releasetwin-engine
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build the CLI
+        working-directory: releasetwin-engine
+        run: dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release
+
+      - name: Install Playwright browsers
+        working-directory: releasetwin-engine
+        run: pwsh src/ReleaseTwin.Cli/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Build + serve react-demo
+        working-directory: apps/react-demo
+        run: |
+          npm ci
+          npm run build
+          npm run preview &
+          npx wait-on http://localhost:4173
+
+      - name: Run the release-proof cases (fails the job on any case failure)
+        working-directory: releasetwin-engine
+        env:
+          RELEASETWIN_UI_ENABLED: "1"
+          SPA_BASE_URL: http://localhost:4173
+          API_BASE_URL: https://postman-echo.com
+        run: |
+          # angular-journey.yaml targets a different app; excluded from this run.
+          mkdir /tmp/cases-react
+          cp examples/cases-spa/react-journey.yaml examples/cases-spa/admin-cookie.yaml /tmp/cases-react/
+          mkdir -p /tmp/fixtures
+          cp examples/fixtures/spa-journey.json /tmp/fixtures/
+          dotnet run --no-build -c Release --project src/ReleaseTwin.Cli -- run /tmp/cases-react

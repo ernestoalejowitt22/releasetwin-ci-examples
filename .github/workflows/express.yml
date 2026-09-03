@@ -1,0 +1,54 @@
+name: Express demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  release-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout releasetwin-ci-examples
+        uses: actions/checkout@v7
+
+      - name: Checkout ReleaseTwin (for examples/cases-express)
+        uses: actions/checkout@v7
+        with:
+          repository: ernestoalejowitt22/ReleaseTwin
+          path: releasetwin-engine
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install express-demo
+        working-directory: apps/express-demo
+        run: npm ci
+
+      - name: Boot express-demo
+        working-directory: apps/express-demo
+        run: |
+          npm start &
+          npx wait-on http://localhost:4599/orders/42
+
+      - name: Run the release-proof cases (fails the job on any case failure or adverse flag-proof verdict)
+        env:
+          API_BASE_URL: http://localhost:4599
+        run: |
+          mkdir -p test-results
+          docker run --rm --network host \
+            -v "${{ github.workspace }}/releasetwin-engine/examples/cases-express:/cases:ro" \
+            -v "${{ github.workspace }}/test-results:/test-results" \
+            -e API_BASE_URL \
+            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.2.0 \
+            run /cases --junit-xml /test-results/junit.xml
+
+      - name: Publish test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: express-demo-junit
+          path: test-results/junit.xml
+          if-no-files-found: ignore
