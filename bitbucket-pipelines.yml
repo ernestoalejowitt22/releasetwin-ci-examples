@@ -17,7 +17,7 @@ pipelines:
         - step:
             name: Express demo
             script:
-              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y -qq nodejs
               - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
               - cd apps/express-demo && npm ci && npm start & disown
               - npx --yes wait-on http://localhost:4599/orders/42
@@ -28,7 +28,7 @@ pipelines:
         - step:
             name: React demo
             script:
-              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y -qq nodejs
               - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
               - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
               - export PATH="$PATH:$HOME/.dotnet/tools"
@@ -46,7 +46,7 @@ pipelines:
         - step:
             name: Angular demo
             script:
-              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -qq && apt-get install -y -qq nodejs
+              - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y -qq nodejs
               - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
               - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
               - export PATH="$PATH:$HOME/.dotnet/tools"
