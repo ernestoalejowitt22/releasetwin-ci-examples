@@ -15,9 +15,13 @@ jobs:
 
       # Fails the job (visibly, in GitHub Actions) rather than silently
       # leaving Bitbucket stale — per design.md's risk mitigation.
+      #
+      # BITBUCKET_REPO_TOKEN is a repository access token (Bitbucket's
+      # current replacement for the deprecated app-password flow); over
+      # git+https it authenticates as username "x-token-auth" with the token
+      # as the password.
       - name: Push-mirror main to Bitbucket
         run: |
-          git push --force "https://${BITBUCKET_USERNAME}:${BITBUCKET_APP_PASSWORD}@bitbucket.org/releasetwin/releasetwin-ci-examples.git" HEAD:main
+          git push --force "https://x-token-auth:${BITBUCKET_REPO_TOKEN}@bitbucket.org/releasetwin/releasetwin-ci-examples.git" HEAD:main
         env:
-          BITBUCKET_USERNAME: ${{ secrets.BITBUCKET_USERNAME }}
-          BITBUCKET_APP_PASSWORD: ${{ secrets.BITBUCKET_APP_PASSWORD }}
+          BITBUCKET_REPO_TOKEN: ${{ secrets.BITBUCKET_REPO_TOKEN }}
