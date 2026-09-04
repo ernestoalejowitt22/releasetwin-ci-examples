@@ -29,11 +29,13 @@ pipelines:
             name: React demo
             script:
               - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y -qq nodejs
+              # Microsoft.Playwright.CLI is deprecated (stopped publishing after 1.2.3) —
+              # use the playwright.ps1 script the Microsoft.Playwright package generates
+              # at build time instead, same as ReleaseTwin's own ci.yml.
+              - curl -sSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o /tmp/packages-microsoft-prod.deb && dpkg -i /tmp/packages-microsoft-prod.deb && apt-get update -qq && apt-get install -y -qq powershell
               - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
-              - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
-              - export PATH="$PATH:$HOME/.dotnet/tools"
               - (cd /tmp/releasetwin-engine && dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release)
-              - playwright install --with-deps chromium
+              - pwsh /tmp/releasetwin-engine/src/ReleaseTwin.Cli/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
               - cd apps/react-demo && npm ci && npm run build && npm run preview & disown
               - npx --yes wait-on http://localhost:4173
               - cd /tmp/releasetwin-engine
@@ -47,11 +49,10 @@ pipelines:
             name: Angular demo
             script:
               - apt-get update -qq && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y -qq nodejs
+              - curl -sSL https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -o /tmp/packages-microsoft-prod.deb && dpkg -i /tmp/packages-microsoft-prod.deb && apt-get update -qq && apt-get install -y -qq powershell
               - git clone --depth 1 https://github.com/ernestoalejowitt22/ReleaseTwin.git /tmp/releasetwin-engine
-              - dotnet tool install --global Microsoft.Playwright.CLI --version 1.49.0
-              - export PATH="$PATH:$HOME/.dotnet/tools"
               - (cd /tmp/releasetwin-engine && dotnet build src/ReleaseTwin.Cli/ReleaseTwin.Cli.csproj -c Release)
-              - playwright install --with-deps chromium
+              - pwsh /tmp/releasetwin-engine/src/ReleaseTwin.Cli/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
               - cd apps/angular-demo && npm ci && npm run build && npm run preview & disown
               - npx --yes wait-on http://localhost:4174
               - cd /tmp/releasetwin-engine
