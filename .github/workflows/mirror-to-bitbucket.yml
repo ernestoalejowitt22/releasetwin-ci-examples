@@ -22,6 +22,6 @@ jobs:
       # as the password.
       - name: Push-mirror main to Bitbucket
         run: |
-          git push --force "https://x-token-auth:${BITBUCKET_REPO_TOKEN}@bitbucket.org/releasetwin/releasetwin-ci-examples.git" HEAD:main
+          git push --force "https://x-token-auth:${BITBUCKET_REPO_TOKEN}@bitbucket.org/releasetwin/releasetwin-ci-example-projects.git" HEAD:main
         env:
           BITBUCKET_REPO_TOKEN: ${{ secrets.BITBUCKET_REPO_TOKEN }}
