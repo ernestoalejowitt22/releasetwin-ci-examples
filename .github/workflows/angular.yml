@@ -52,6 +52,9 @@ jobs:
           RELEASETWIN_UI_ENABLED: "1"
           SPA_BASE_URL: http://localhost:4174
           API_BASE_URL: https://postman-echo.com
+          # Feeds the live demo at https://releasetwin.com/demo. Empty token ⇒ no upload.
+          RELEASETWIN_API_URL: https://api.releasetwin.com
+          RELEASETWIN_API_TOKEN: ${{ secrets.RELEASETWIN_API_TOKEN_ANGULAR || secrets.RELEASETWIN_API_TOKEN }}
         run: |
           # react-journey.yaml targets a different app; excluded from this run.
           mkdir /tmp/cases-angular
