@@ -50,5 +50,5 @@ published CLI image:
 
 ```bash
 docker run --rm --network host \
-  ghcr.io/ernestoalejowitt22/releasetwin/cli:0.3.0 run ./cases
+  ghcr.io/ernestoalejowitt22/releasetwin/cli:0.4.0 run ./cases
 ```

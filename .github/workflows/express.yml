@@ -58,7 +58,7 @@ jobs:
             -v "${{ github.workspace }}/test-results:/test-results" \
             -e API_BASE_URL -e RELEASETWIN_API_URL -e RELEASETWIN_API_TOKEN -e RELEASETWIN_PROJECT_ID \
             -e ACTIONS_ID_TOKEN_REQUEST_URL -e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
-            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.3.0 \
+            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.4.0 \
             run /examples/cases-express --junit-xml /test-results/junit.xml
 
       - name: Publish test results
