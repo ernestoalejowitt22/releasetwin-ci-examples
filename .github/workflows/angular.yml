@@ -9,6 +9,9 @@ on:
 jobs:
   release-proof:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # upload to the public example org with the job's own identity — no secret
     steps:
       - name: Checkout releasetwin-ci-examples
         uses: actions/checkout@v7
@@ -54,6 +57,7 @@ jobs:
           API_BASE_URL: https://postman-echo.com
           # Feeds the live demo at https://releasetwin.com/demo. Empty token ⇒ no upload.
           RELEASETWIN_API_URL: https://api.releasetwin.com
+          RELEASETWIN_PROJECT_ID: ${{ vars.RELEASETWIN_PROJECT_ID_ANGULAR || vars.RELEASETWIN_PROJECT_ID }}
           RELEASETWIN_API_TOKEN: ${{ secrets.RELEASETWIN_API_TOKEN_ANGULAR || secrets.RELEASETWIN_API_TOKEN }}
         run: |
           # react-journey.yaml targets a different app; excluded from this run.

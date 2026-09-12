@@ -9,6 +9,9 @@ on:
 jobs:
   release-proof:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # upload to the public example org with the job's own identity — no secret
     steps:
       - name: Checkout releasetwin-ci-examples
         uses: actions/checkout@v7
@@ -40,6 +43,10 @@ jobs:
           # organization). On a fork PR, or wherever the secret is not set, the token is
           # empty and the CLI skips the upload entirely — the run itself is unaffected.
           RELEASETWIN_API_URL: https://api.releasetwin.com
+          # Preferred: the project id (a repository *variable*, not a secret) + the OIDC permission
+          # above. The CLI exchanges the job's GitHub token for a short-lived credential; the project
+          # must be bound to this repository on its Settings page. Fallback: a stored token secret.
+          RELEASETWIN_PROJECT_ID: ${{ vars.RELEASETWIN_PROJECT_ID_EXPRESS || vars.RELEASETWIN_PROJECT_ID }}
           RELEASETWIN_API_TOKEN: ${{ secrets.RELEASETWIN_API_TOKEN_EXPRESS || secrets.RELEASETWIN_API_TOKEN }}
         run: |
           mkdir -p test-results
@@ -49,8 +56,9 @@ jobs:
           docker run --rm --network host \
             -v "${{ github.workspace }}/releasetwin-engine/examples:/examples:ro" \
             -v "${{ github.workspace }}/test-results:/test-results" \
-            -e API_BASE_URL -e RELEASETWIN_API_URL -e RELEASETWIN_API_TOKEN \
-            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.3.0 \
+            -e API_BASE_URL -e RELEASETWIN_API_URL -e RELEASETWIN_API_TOKEN -e RELEASETWIN_PROJECT_ID \
+            -e ACTIONS_ID_TOKEN_REQUEST_URL -e ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.4.0 \
             run /examples/cases-express --junit-xml /test-results/junit.xml
 
       - name: Publish test results

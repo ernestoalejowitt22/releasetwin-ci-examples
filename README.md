@@ -24,11 +24,17 @@ redacted evidence, release readiness (`express-demo/1.0`, `spa-demo/1.0`), and t
 radius of the `currency-normalization` flag. Nothing there is staged: it is these workflows,
 on every push.
 
-How: each run step sets `RELEASETWIN_API_URL` and `RELEASETWIN_API_TOKEN`. The token comes from
-a repository secret — `RELEASETWIN_API_TOKEN` for all three demos, or `RELEASETWIN_API_TOKEN_EXPRESS`
-/ `_REACT` / `_ANGULAR` to land each demo in its own project. When the secret is absent (a fork
-PR, a local run, the Bitbucket and Azure mirrors) the token is empty and the CLI skips the
-upload; the run passes or fails exactly as before.
+How, with **no secret at all**: each job has `permissions: id-token: write` and sets
+`RELEASETWIN_PROJECT_ID` from a repository *variable* (`RELEASETWIN_PROJECT_ID` for all three
+demos, or `RELEASETWIN_PROJECT_ID_EXPRESS` / `_REACT` / `_ANGULAR` for one project each). The CLI
+trades the job's own GitHub OIDC token for a short-lived upload credential; the project must be
+bound to `github.com/ernestoalejowitt22/releasetwin-ci-examples` on its Settings page. This is
+the same setup any customer's repository uses — see
+[releasetwin.com/docs/ci#github-oidc](https://releasetwin.com/docs/ci#github-oidc).
+
+Fallback for a CI without OIDC: a stored `RELEASETWIN_API_TOKEN` secret (the per-demo variants
+work too) wins when present. With neither a project id nor a token (a fork PR, a local run, the
+Bitbucket and Azure mirrors) the CLI skips the upload; the run passes or fails exactly as before.
 
 ## Why a separate repo
 
@@ -44,5 +50,5 @@ published CLI image:
 
 ```bash
 docker run --rm --network host \
-  ghcr.io/ernestoalejowitt22/releasetwin/cli:0.3.0 run ./cases
+  ghcr.io/ernestoalejowitt22/releasetwin/cli:0.4.0 run ./cases
 ```
