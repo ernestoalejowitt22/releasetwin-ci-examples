@@ -36,6 +36,11 @@ jobs:
       - name: Run the release-proof cases (fails the job on any case failure or adverse flag-proof verdict)
         env:
           API_BASE_URL: http://localhost:4599
+          # Feeds the live demo at https://releasetwin.com/demo (the public example
+          # organization). On a fork PR, or wherever the secret is not set, the token is
+          # empty and the CLI skips the upload entirely — the run itself is unaffected.
+          RELEASETWIN_API_URL: https://api.releasetwin.com
+          RELEASETWIN_API_TOKEN: ${{ secrets.RELEASETWIN_API_TOKEN_EXPRESS || secrets.RELEASETWIN_API_TOKEN }}
         run: |
           mkdir -p test-results
           # Mount the whole examples/ dir, not just cases-express/ — fixtures
@@ -44,8 +49,8 @@ jobs:
           docker run --rm --network host \
             -v "${{ github.workspace }}/releasetwin-engine/examples:/examples:ro" \
             -v "${{ github.workspace }}/test-results:/test-results" \
-            -e API_BASE_URL \
-            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.2.0 \
+            -e API_BASE_URL -e RELEASETWIN_API_URL -e RELEASETWIN_API_TOKEN \
+            ghcr.io/ernestoalejowitt22/releasetwin/cli:0.3.0 \
             run /examples/cases-express --junit-xml /test-results/junit.xml
 
       - name: Publish test results
