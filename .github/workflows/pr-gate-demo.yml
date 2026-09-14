@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2026 Ernesto Alejo and the ReleaseTwin contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# discovery-surfaces §3: the public PR-gate billboard. Runs one small case
+# (examples/cases-pr-gate-demo in the engine repo) via the Marketplace-listed
+# releasetwin/releasetwin-action, so any visitor opening a PR against this repo
+# sees the Action's real PR comment and check run — separate from the
+# push-triggered express/react/angular workflows that feed the live
+# https://releasetwin.com/demo public example organization. This workflow never
+# uploads anywhere: no project-id, no id-token permission, no secret.
+name: PR-gate demo
+
+on:
+  pull_request:
+    paths:
+      - "apps/express-demo/**"
+      - ".github/workflows/pr-gate-demo.yml"
+
+permissions:
+  contents: read
+  pull-requests: write   # post/update the comment
+  checks: write           # create the check run
+
+jobs:
+  release-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout releasetwin-ci-examples
+        uses: actions/checkout@v7
+
+      - name: Checkout ReleaseTwin (for examples/cases-pr-gate-demo)
+        uses: actions/checkout@v7
+        with:
+          repository: ernestoalejowitt22/ReleaseTwin
+          path: releasetwin-engine
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install express-demo
+        working-directory: apps/express-demo
+        run: npm ci
+
+      - name: Boot express-demo
+        working-directory: apps/express-demo
+        run: |
+          npm start &
+          npx wait-on http://localhost:4599/orders/42
+
+      - name: Run the release-proof gate (posts a PR comment + check run)
+        uses: releasetwin/releasetwin-action@0.4.1
+        env:
+          # The Action runs the CLI in its own container with no --network host, so
+          # "localhost" inside it is the container, not this runner. GitHub-hosted Ubuntu
+          # runners use the standard Docker bridge, where the host is reachable at the
+          # bridge gateway address — express-demo above is still booted and health-checked
+          # against the runner's own localhost:4599.
+          API_BASE_URL: http://172.17.0.1:4599
+        with:
+          cases-path: releasetwin-engine/examples/cases-pr-gate-demo
+          env-vars: API_BASE_URL
