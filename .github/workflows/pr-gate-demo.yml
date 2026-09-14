@@ -49,7 +49,7 @@ jobs:
           npx wait-on http://localhost:4599/orders/42
 
       - name: Run the release-proof gate (posts a PR comment + check run)
-        uses: releasetwin/releasetwin-action@v0.4.1
+        uses: releasetwin/releasetwin-action@0.4.1
         env:
           API_BASE_URL: http://localhost:4599
         with:
