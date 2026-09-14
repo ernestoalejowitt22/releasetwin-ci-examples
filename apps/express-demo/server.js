@@ -32,7 +32,7 @@ app.get("/orders/:id", (req, res) => {
   if (!order) return res.status(404).json({ error: "not found" });
 
   const taxed = flags["orders-v2"] === "enabled";
-  const total = taxed ? Math.round(order.subtotal * 1.1) : order.subtotal;
+  const total = Math.round(order.subtotal * 1.1);
 
   res.json({ ...order, total, taxed });
 });
