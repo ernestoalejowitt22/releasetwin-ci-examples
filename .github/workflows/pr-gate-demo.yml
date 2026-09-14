@@ -51,7 +51,12 @@ jobs:
       - name: Run the release-proof gate (posts a PR comment + check run)
         uses: releasetwin/releasetwin-action@0.4.1
         env:
-          API_BASE_URL: http://localhost:4599
+          # The Action runs the CLI in its own container with no --network host, so
+          # "localhost" inside it is the container, not this runner. GitHub-hosted Ubuntu
+          # runners use the standard Docker bridge, where the host is reachable at the
+          # bridge gateway address — express-demo above is still booted and health-checked
+          # against the runner's own localhost:4599.
+          API_BASE_URL: http://172.17.0.1:4599
         with:
           cases-path: releasetwin-engine/examples/cases-pr-gate-demo
           env-vars: API_BASE_URL
