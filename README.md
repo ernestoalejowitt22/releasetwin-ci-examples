@@ -52,3 +52,18 @@ published CLI image:
 docker run --rm --network host \
   ghcr.io/ernestoalejowitt22/releasetwin/cli:0.4.0 run ./cases
 ```
+
+## See the PR gate live
+
+Fork this repo, break something real in `apps/express-demo/server.js` — for example, make
+`GET /orders/:id` always apply the tax multiplier instead of only when the `orders-v2` flag
+is enabled — and open a PR back here (or just against your own fork). The
+[`releasetwin/releasetwin-action`](https://github.com/marketplace/actions/releasetwin-pr-annotations)
+Marketplace Action runs a small case against your change and posts a PR comment plus a
+check run named `ReleaseTwin`, updated in place as you push fixes — no ReleaseTwin account,
+API token, or hosted call involved (see [`.github/workflows/pr-gate-demo.yml`](.github/workflows/pr-gate-demo.yml)).
+
+Don't want to break anything yourself? See the repo's
+[closed pull requests](https://github.com/ernestoalejowitt22/releasetwin-ci-examples/pulls?q=is%3Apr+is%3Aclosed)
+for a real example: a genuine regression in the total calculation, caught failing by this
+same gate, then pushed to green.
