@@ -1,3 +1,4 @@
+// pr-gate-demo billboard: fixed above, see the PR history for the regression and fix.
 // Minimal Express demo, two real behaviour bugs, each behind its own flag,
 // both driven entirely over REST so flag_proof.control needs no adapter,
 // just an HTTP toggle:
