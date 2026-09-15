@@ -1,0 +1,15 @@
+name: Release-proof gate
+on: [pull_request, push]
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+  checks: write
+jobs:
+  release-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: releasetwin/releasetwin-action@v0
+        with:
+          project-id: 2c48e2cf-4f59-4765-9299-74a83f5d3a57
